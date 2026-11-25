@@ -1,3 +1,5 @@
 _ref/
 _shots/
 __pycache__/
+.vercel
+.env*

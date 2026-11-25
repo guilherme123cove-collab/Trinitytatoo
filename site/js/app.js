@@ -25,23 +25,28 @@ function paint(el,seed,mode,label,note){el.innerHTML=phSVG(seed,mode)+(label?`<d
 const PH={hero:['hero','line'],portrait:['portrait','line'],cmpAfter:['cmpA','fill'],cmpBefore:['cmpB','line']};
 $$('[data-ph]').forEach(el=>{const [s,m]=PH[el.dataset.ph]||[el.dataset.ph,'line'];paint(el,s,m,el.dataset.phLabel,el.dataset.phNote)});
 
-// Trabalhos (títulos conforme legendas observadas; imagens pendentes)
+// Trabalhos: fotos reais publicadas pela artista (títulos conforme as legendas dela)
 const WORKS=[
-{id:'DbOPc6fEcnn',t:'Máscaras',d:'Composição em preto marcante.',l:'Publicação DbOPc6fEcnn — foto original necessária.'},
-{id:'DfPnYgtG8zs',t:'Trust The Process',d:'Lettering feito sob medida para a anatomia.',l:'Publicação DfPnYgtG8zs — foto original necessária.'},
-{id:'Dd4cAwnG7A2',t:'Forgiveness',d:'Lettering.',l:'Publicação Dd4cAwnG7A2 — foto original necessária.'},
-{id:'DdeHF1om_KU',t:'Chainsaw Man',d:'Trabalho fixado, universo anime/mangá.',l:'Publicação DdeHF1om_KU — foto original necessária.'},
-{id:'DduJWvyGyih',t:'Miyamoto Musashi',d:'Trabalho fixado.',l:'Publicação DduJWvyGyih — foto original necessária.'},
-{id:'DfSWS_RB8Eu',t:'Em execução',d:'Cena de trabalho (pescoço).',l:'Reel DfSWS_RB8Eu — vídeo/frames originais necessários.'}];
+{id:'DdeHF1om_KU',f:'makima',t:'Makima',d:'Chainsaw Man, em preto e cinza no braço.'},
+{id:'DbOPc6fEcnn',f:'oni',t:'Máscara oni',d:'Blackwork de perna inteira.'},
+{id:'DduJWvyGyih',f:'musashi',t:'Miyamoto Musashi',d:'Vagabond, no antebraço.'},
+{id:'DfLHP1CgcXX',f:'kurapika',t:'Kurapika',d:'Hunter x Hunter, no antebraço.'},
+{id:'DczCuhOgVih',f:'mao-blackwork',t:'Mão em blackwork',d:'Composição que fecha a mão inteira.'},
+{id:'DfPnYgtG8zs',f:'trust-the-process',t:'Trust The Process',d:'Lettering desenhado para a anatomia da costela.'},
+{id:'DdUS5k-m7Xq',f:'mao-ornamental',t:'Mão ornamental',d:'Blackwork ornamental na mão.'},
+{id:'Db3iPOmFGD9',f:'freehand',t:'Freehand',d:'Desenhado direto na pele, sem decalque.'},
+{id:'DcbvrqOG3kP',f:'castles',t:'Castles',d:'Do desenho à pele, no antebraço.'},
+{id:'DbyKijrEfwZ',f:'malenia',t:'Malenia',d:'Elden Ring, no braço.'}];
+const img=(src,alt,lazy)=>`<img src="${src}" alt="${alt}"${lazy?' loading="lazy" decoding="async"':''} width="1080" height="1350">`;
 function card(w,i){const b=document.createElement('button');b.className='card';b.type='button';b.dataset.i=i;b.setAttribute('aria-label','Abrir '+w.t);
-b.innerHTML=`<figure data-k="${w.id}"></figure><h3>${w.t}</h3><p>${w.d}</p>`;paint($('figure',b),w.id,i%2?'fill':'line','Foto real pendente',w.id);b.addEventListener('click',()=>openV(i));return b}
+b.innerHTML=`<figure>${img('media/trabalhos/'+w.f+'-sm.jpg','Tatuagem: '+w.t,true)}</figure><h3>${w.t}</h3><p>${w.d}</p>`;b.addEventListener('click',()=>openV(i));return b}
 const rail=$('#rail'),grid=$('#worksGrid');
-if(rail)WORKS.forEach((w,i)=>rail.append(card(w,i)));
+if(rail)WORKS.slice(0,6).forEach((w,i)=>rail.append(card(w,i)));
 if(grid)WORKS.forEach((w,i)=>grid.append(card(w,i)));
 // Rail: controles, arraste com mouse (toque usa rolagem nativa)
 if(rail){const cs=()=>$$('.card',rail);let cur=0;
-function mark(){const c=rail.getBoundingClientRect();let best=0,bd=1e9;cs().forEach((el,i)=>{const r=el.getBoundingClientRect();const d=Math.abs(r.left+r.width/2-(c.left+c.width/2));if(d<bd){bd=d;best=i}});cur=best;cs().forEach((el,i)=>el.classList.toggle('active',i===best));$('#railCount').textContent=(best+1)+' / '+WORKS.length}
-const go=n=>{cur=Math.max(0,Math.min(WORKS.length-1,n));cs()[cur].scrollIntoView({behavior:reduce?'auto':'smooth',inline:'center',block:'nearest'})};
+function mark(){const c=rail.getBoundingClientRect();let best=0,bd=1e9;cs().forEach((el,i)=>{const r=el.getBoundingClientRect();const d=Math.abs(r.left+r.width/2-(c.left+c.width/2));if(d<bd){bd=d;best=i}});cur=best;cs().forEach((el,i)=>el.classList.toggle('active',i===best));$('#railCount').textContent=(best+1)+' / '+cs().length}
+const go=n=>{cur=Math.max(0,Math.min(cs().length-1,n));cs()[cur].scrollIntoView({behavior:reduce?'auto':'smooth',inline:'center',block:'nearest'})};
 $('#railPrev').onclick=()=>go(cur-1);$('#railNext').onclick=()=>go(cur+1);
 rail.addEventListener('scroll',()=>requestAnimationFrame(mark),{passive:true});
 rail.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
@@ -53,11 +58,11 @@ rail.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault
 // Viewer
 let dlg,vi=0,opener;
 function ensureD(){if(dlg)return;dlg=document.createElement('dialog');dlg.className='viewer';dlg.setAttribute('aria-label','Detalhe do trabalho');
-dlg.innerHTML='<button class="circle vw-close" aria-label="Fechar">✕</button><div class="vw"><figure id="vwF"></figure><div class="vw-info"><p class="eyebrow">Trabalho</p><h2 id="vwT"></h2><p id="vwD"></p><p class="pending" id="vwL"></p><p class="small muted">Em versão final: fotos grandes, detalhe do traço e a relação com a anatomia.</p><div class="vw-nav"><button class="circle" id="vwP" aria-label="Anterior">←</button><button class="circle" id="vwN" aria-label="Próximo">→</button><a class="btn btn-sm" href="orcamento.html" style="margin-left:auto">Conte sua ideia</a></div></div></div>';
+dlg.innerHTML='<button class="circle vw-close" aria-label="Fechar">✕</button><div class="vw"><figure id="vwF"></figure><div class="vw-info"><p class="eyebrow">Trabalho</p><h2 id="vwT"></h2><p id="vwD"></p><p class="small muted">Foto publicada pela artista no Instagram.</p><div class="vw-nav"><button class="circle" id="vwP" aria-label="Anterior">←</button><button class="circle" id="vwN" aria-label="Próximo">→</button><a class="btn btn-sm" href="orcamento.html" style="margin-left:auto">Conte sua ideia</a></div></div></div>';
 document.body.append(dlg);$('.vw-close',dlg).onclick=()=>dlg.close();$('#vwP').onclick=()=>show(vi-1);$('#vwN').onclick=()=>show(vi+1);
 dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});dlg.addEventListener('close',()=>{document.body.style.overflow='';opener&&opener.focus()});
 dlg.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(vi+1);if(e.key==='ArrowLeft')show(vi-1)})}
-function show(i){vi=(i+WORKS.length)%WORKS.length;const w=WORKS[vi];paint($('#vwF'),w.id,vi%2?'fill':'line','Foto real pendente',w.id);$('#vwT').textContent=w.t;$('#vwD').textContent=w.d;$('#vwL').textContent=w.l}
+function show(i){vi=(i+WORKS.length)%WORKS.length;const w=WORKS[vi];$('#vwF').innerHTML=img('media/trabalhos/'+w.f+'.jpg','Tatuagem: '+w.t);$('#vwT').textContent=w.t;$('#vwD').textContent=w.d}
 function openV(i){opener=document.activeElement;ensureD();show(i);dlg.showModal();document.body.style.overflow='hidden'}
 
 // Comparador
@@ -65,12 +70,15 @@ const cmp=$('#cmp');
 if(cmp){const range=$('.cmp-range',cmp),bef=$('.cmp-before',cmp),hd=$('.cmp-handle',cmp);
 const set=v=>{v=Math.max(0,Math.min(100,v));range.value=v;bef.style.clipPath=`inset(0 ${100-v}% 0 0)`;hd.style.left=v+'%'};
 range.addEventListener('input',()=>set(+range.value));set(50);
+// Pares reais do mesmo trabalho (fotos e vídeo publicados pela artista)
 const CASES=[
-{a:'Desenho',b:'Na pele',t:'Mesmo trabalho: a arte desenhada e o resultado já na pele. Par real pendente.'},
-{a:'Antes',b:'Cobertura',t:'Tatuagem anterior e a cobertura feita sobre ela, sempre do mesmo local. Par real pendente.'},
-{a:'Recém-feita',b:'Cicatrizada',t:'A mesma tatuagem logo após a sessão e depois de cicatrizada. Não é “antes e depois”. Par real pendente.'}];
-$$('.chip').forEach(c=>c.onclick=()=>{$$('.chip').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});c.classList.add('on');c.setAttribute('aria-pressed','true');const k=CASES[+c.dataset.case];$('#tagL').textContent=k.a;$('#tagR').textContent=k.b;$('#cmpDesc').textContent=k.t;paint($('.cmp-after'),'cmpA'+c.dataset.case,'fill');paint($('.cmp-before'),'cmpB'+c.dataset.case,'line');set(50)});
-$('#cmpDesc').textContent=CASES[0].t}
+{a:'Desenho',b:'Na pele',l:'par-castles-desenho',r:'par-castles-pele',t:'Castles: a arte que ela desenhou e a mesma peça já tatuada no antebraço.'},
+{a:'Marcação',b:'Tatuagem',l:'par-freehand-marcacao',r:'par-freehand-pronta',t:'Freehand: o desenho riscado direto na pele e o resultado no mesmo braço.'},
+{a:'Recém-feita',b:'Cicatrizada',l:'par-oni-recem',r:'par-oni-cicatrizada',t:'Máscara oni: a mesma tatuagem logo após a sessão e depois de cicatrizada. Fotos de momentos diferentes; ângulo e luz mudam.'}];
+const load=k=>{$('#tagL').textContent=k.a;$('#tagR').textContent=k.b;$('#cmpDesc').textContent=k.t;
+$('.cmp-before').innerHTML=img('media/trabalhos/'+k.l+'.jpg',k.a+' — '+k.t);$('.cmp-after').innerHTML=img('media/trabalhos/'+k.r+'.jpg',k.b+' — '+k.t);set(50)};
+$$('.chip').forEach(c=>c.onclick=()=>{$$('.chip').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});c.classList.add('on');c.setAttribute('aria-pressed','true');load(CASES[+c.dataset.case])});
+load(CASES[0])}
 
 // Linha que se desenha na rolagem
 const sp=$('#scrollPath');
